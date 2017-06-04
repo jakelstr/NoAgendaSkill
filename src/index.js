@@ -1,18 +1,6 @@
 'use strict';
 var AWS = require('aws-sdk');
 
-/**
- * This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
- * The Intent Schema, Custom Slots, and Sample Utterances for this skill, as well as
- * testing instructions are located at http://amzn.to/1LzFrj6
- *
- * For additional samples, visit the Alexa Skills Kit Getting Started guide at
- * http://amzn.to/1LGWsLG
- */
-
-
-// --------------- Helpers that build all of the responses -----------------------
-
 function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
     return {
         outputSpeech: {
@@ -42,41 +30,12 @@ function buildResponse(sessionAttributes, speechletResponse) {
     };
 }
 
-/*{
-  "type": "AudioPlayer.Play",
-  "playBehavior": "string",
-  "audioItem": {
-    "stream": {
-      "url": "string",
-      "token": "string",
-      "expectedPreviousToken": "string",
-      "offsetInMilliseconds": 0c
-    }
-  }
-}*/
-
 function buildStopResponse() {
     return {
-        /*"outputSpeech":{
-            "type": "PlainText",
-            "text": ""
-        },
-        "card":{
-             type: 'Simple',
-        title: 'title',
-        content: 'output',
-        },
-        "reprompt":{
-            "outputSpeech": {
-                "type": "PlainText",
-                "text": null 
-            }
-        },*/
         "directives": [{
             "type": "AudioPlayer.Stop"
         }],
         "shouldEndSession": true
-
     };
 }
 
@@ -269,6 +228,7 @@ function currentPosition(intent, session, callback) {
 }
 
 function resumeNoAgenda(intent, session, callback) {
+    //Resume to 10 seconds before the saved position. 
     var dynamodb = new AWS.DynamoDB({
         apiVersion: '2012-08-10'
     });
@@ -286,12 +246,13 @@ function resumeNoAgenda(intent, session, callback) {
         } else if (data.Item === undefined) {
             playNoAgenda(intent, session, callback);
         } else {
-            callback({}, buildPlayerResponse(data.Item.target.S, data.Item.target.S, data.Item.position.S, "OK"));
+            callback({}, buildPlayerResponse(data.Item.target.S, data.Item.target.S, (parseInt(data.Item.position.S) - 10000).toString(), "OK"));
         }
     });
 }
 
 function jumpBack(intent, session, callback) {
+    //Set playback to 30 seconds before the last saved position. (Saved when the user interrupted Alexa to ask for the jump back)
     var dynamodb = new AWS.DynamoDB({
         apiVersion: '2012-08-10'
     });
@@ -313,7 +274,6 @@ function jumpBack(intent, session, callback) {
             callback({}, buildPlayerResponse(data.Item.target.S, data.Item.target.S, (parseInt(data.Item.position.S) - 30000).toString(), "OK"));
         }
     });
-    //callback({}, buildSpeechletResponse('', 'OK' , '', true));
 }
 
 // --------------- Events -----------------------
